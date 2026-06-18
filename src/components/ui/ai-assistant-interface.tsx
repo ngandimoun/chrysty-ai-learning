@@ -308,8 +308,8 @@ export function SessionComposerInterface({
                     Chrysty remembers what you have already explored
                   </p>
                 </div>
-                <ul className="divide-y divide-border">
-                  {journeyTopics.slice(0, 3).map((topic, index) => (
+                <ul className="max-h-48 divide-y divide-border overflow-y-auto overscroll-contain">
+                  {journeyTopics.map((topic, index) => (
                     <motion.li
                       key={topic.subject}
                       initial={{ opacity: 0 }}
@@ -365,8 +365,8 @@ export function SessionComposerInterface({
                     Sessions use your learn history and weak areas
                   </p>
                 </div>
-                <ul className="divide-y divide-border">
-                  {journeyTopics.slice(0, 3).map((topic, index) => {
+                <ul className="max-h-48 divide-y divide-border overflow-y-auto overscroll-contain">
+                  {journeyTopics.map((topic, index) => {
                     const sourceId = topic.priorPaths[0]?.sessionId;
                     return (
                       <motion.li

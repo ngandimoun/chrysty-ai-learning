@@ -138,7 +138,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
       <Sheet open={leftPanelOpen} onOpenChange={setLeftPanelOpen}>
         <SheetContent side="left" className="w-[var(--panel-left-width)] p-0">
           <SheetHeader className="sr-only">
-            <SheetTitle>Sessions</SheetTitle>
+            <SheetTitle>Navigation</SheetTitle>
           </SheetHeader>
           <SessionSidebar onNavigate={() => setLeftPanelOpen(false)} />
         </SheetContent>

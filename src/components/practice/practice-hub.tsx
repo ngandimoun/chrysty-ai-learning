@@ -24,8 +24,18 @@ function isGeneratingSummary(session: { generationStatus?: string }): boolean {
   return session.generationStatus === 'generating';
 }
 
+function HubLoading() {
+  return (
+    <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center gap-4 px-6 py-16">
+      <Loader2 className="size-6 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
+
 export function PracticeHub() {
   const sessions = useSessionStore((s) => s.sessions);
+  const sessionsLoaded = useSessionStore((s) => s.sessionsLoaded);
+  const sessionsLoading = useSessionStore((s) => s.sessionsLoading);
   const loadSessions = useSessionStore((s) => s.loadSessions);
   const removeSessionSummary = useSessionStore((s) => s.removeSessionSummary);
   const openComposer = useSessionStore((s) => s.openComposer);
@@ -41,6 +51,10 @@ export function PracticeHub() {
     removeSessionSummary(sessionId);
     await loadSessions();
   };
+
+  if (!sessionsLoaded && sessionsLoading) {
+    return <HubLoading />;
+  }
 
   if (practiceSessions.length === 0) {
     return (

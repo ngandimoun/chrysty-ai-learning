@@ -21,6 +21,8 @@ import { cn } from '@/lib/utils';
 import { MODE_THEME } from '@/constants/theme';
 import { THINK_MODE_ENABLED } from '@/constants/features';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 const SESSION_TYPES = ['learn', 'practice', 'think'] as const satisfies readonly SessionType[];
 
@@ -38,6 +40,7 @@ export function SessionSidebar({
   const pathname = usePathname();
   const sessions = useSessionStore((s) => s.sessions);
   const openComposer = useSessionStore((s) => s.openComposer);
+  const { firstName, avatarUrl } = useUserProfile();
   const sidebarSectionsOpen = useUIStore((s) => s.sidebarSectionsOpen);
   const toggleSidebarSection = useUIStore((s) => s.toggleSidebarSection);
   const setSidebarSectionOpen = useUIStore((s) => s.setSidebarSectionOpen);
@@ -55,7 +58,15 @@ export function SessionSidebar({
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-sidebar">
       <div className="flex h-11 shrink-0 items-center justify-between px-4">
-        <span className="text-overline text-muted-foreground">Sessions</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <Avatar size="sm">
+            <AvatarImage src={avatarUrl ?? undefined} alt="" />
+            <AvatarFallback>{firstName[0]?.toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <span className="truncate text-sm font-medium text-foreground">
+            {firstName}
+          </span>
+        </div>
         {showCollapseToggle ? (
           <Button
             variant="ghost"
