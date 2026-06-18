@@ -1,0 +1,15 @@
+{
+  "functions": {
+    "src/app/api/sessions/generate/route.ts": {
+      "maxDuration": 120
+    },
+    "src/app/api/sessions/[sessionId]/stream/route.ts": {
+      "maxDuration": 300
+    }
+  },
+  "build": {
+    "env": {
+      "NODE_VERSION": "20"
+    }
+  }
+}
