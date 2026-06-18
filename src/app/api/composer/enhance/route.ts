@@ -9,7 +9,7 @@ import {
   requirePlatformAccess,
 } from '@/lib/chrysty/guard';
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {

@@ -32,16 +32,19 @@ interface PathGeneratingExperienceProps {
   className?: string;
 }
 
-function useProgressCreep(resetKey: string) {
+function useProgressCreep(resetKey: string, mode: 'fast' | 'slow') {
   const [creep, setCreep] = useState(0);
 
   useEffect(() => {
     setCreep(0);
+    const step = mode === 'slow' ? 0.006 : 0.018;
+    const cap = mode === 'slow' ? 0.98 : 0.92;
+    const intervalMs = mode === 'slow' ? 500 : 400;
     const id = setInterval(() => {
-      setCreep((c) => Math.min(c + 0.018, 0.92));
-    }, 400);
+      setCreep((c) => Math.min(c + step, cap));
+    }, intervalMs);
     return () => clearInterval(id);
-  }, [resetKey]);
+  }, [resetKey, mode]);
 
   return creep;
 }
@@ -65,10 +68,14 @@ function computeDisplayFraction(
   }
 
   const missionSlice = MISSIONS_SHARE / total;
-  const completedShare = OUTLINE_SHARE + completed * missionSlice;
-  const inFlightShare = inFlight ? creep * missionSlice * 0.92 : 0;
 
-  return Math.min(completedShare + inFlightShare, 0.98);
+  if (inFlight) {
+    const start = OUTLINE_SHARE + completed * missionSlice;
+    const end = OUTLINE_SHARE + (completed + 1) * missionSlice;
+    return Math.min(start + creep * (end - start) * 0.9, 0.98);
+  }
+
+  return Math.min(OUTLINE_SHARE + completed * missionSlice, 0.98);
 }
 
 export function PathGeneratingExperience({
@@ -89,10 +96,15 @@ export function PathGeneratingExperience({
     !progress.completedTitles?.includes(progress.title);
 
   const creepKey = `${progress.phase}:${completed}:${progress.title ?? ''}`;
-  const creep = useProgressCreep(creepKey);
+  const creepMode =
+    progress.phase === 'outline' ? 'fast' : inFlight ? 'slow' : 'fast';
+  const creep = useProgressCreep(creepKey, creepMode);
 
   const fraction = computeDisplayFraction(progress, creep);
   const pct = Math.round(fraction * 100);
+  const missionTotal = progress.total ?? 12;
+  const showResumeHint =
+    progress.phase === 'missions' && missionTotal >= 8 && inFlight;
   const circumference = 2 * Math.PI * 54;
   const strokeDashoffset = circumference * (1 - fraction);
   const isWorking = progress.phase === 'outline' || inFlight;
@@ -267,7 +279,7 @@ export function PathGeneratingExperience({
                 className="space-y-1"
               >
                 <p className="text-sm text-muted-foreground">
-                  Mission {progress.index ?? completed + 1} of {progress.total ?? 12}
+                  Mission {progress.index ?? completed + 1} of {missionTotal}
                 </p>
                 <p className="max-w-sm text-sm font-medium text-foreground">
                   {progress.title}
@@ -282,6 +294,12 @@ export function PathGeneratingExperience({
                   >
                     {MISSION_ACTIVITY_LINES[activityIndex]}
                   </motion.p>
+                ) : null}
+                {showResumeHint ? (
+                  <p className="text-xs text-muted-foreground">
+                    This can take several minutes — you can close and resume from
+                    your session later.
+                  </p>
                 ) : null}
               </motion.div>
             ) : (

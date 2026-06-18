@@ -9,7 +9,12 @@ import { hasIncompleteBatches } from '@/lib/learning/practice/session-phase';
 import {
   PRACTICE_BATCH_CLIENT_TIMEOUT_MS,
   PRACTICE_BLUEPRINT_CLIENT_TIMEOUT_MS,
-} from '@/lib/learning/practice/bounds';
+} from '@/lib/learning/generation/bounds';
+import {
+  fetchWithTimeoutAndRetry,
+  isFetchTimeoutError,
+  isGatewayTimeoutResponse,
+} from '@/lib/learning/generation/fetch-with-timeout';
 import {
   appendValidationDetails,
   formatValidationError,
@@ -163,24 +168,60 @@ async function markPracticeGenerationResumingClient(
   }).catch(() => undefined);
 }
 
-function isFetchTimeoutError(error: unknown): boolean {
-  return (
-    error instanceof DOMException &&
-    (error.name === 'TimeoutError' || error.name === 'AbortError')
+async function maybeMarkPracticeFailed(sessionId: string): Promise<void> {
+  const response = await fetch(`/api/sessions/${sessionId}`).catch(
+    () => null,
   );
+  if (!response?.ok) return;
+
+  const { session } = (await response.json()) as {
+    session: PracticeSessionData;
+  };
+  if ((session.generatedBatchIds?.length ?? 0) === 0) {
+    await markPracticeGenerationFailedClient(sessionId);
+  }
 }
 
 async function fetchPracticeBatch(
   sessionId: string,
   batchId: string,
+  batchTheme: string,
 ): Promise<Response> {
-  return fetch(
-    `/api/sessions/${sessionId}/practice-batches/${batchId}/generate`,
-    {
-      method: 'POST',
-      signal: AbortSignal.timeout(PRACTICE_BATCH_CLIENT_TIMEOUT_MS),
-    },
-  );
+  try {
+    const response = await fetchWithTimeoutAndRetry(
+      `/api/sessions/${sessionId}/practice-batches/${batchId}/generate`,
+      { method: 'POST' },
+      { timeoutMs: PRACTICE_BATCH_CLIENT_TIMEOUT_MS, retries: 1 },
+    );
+
+    if (!response.ok) {
+      if (isGatewayTimeoutResponse(response)) {
+        throw new Error(
+          `Batch timed out (${batchTheme}). Your progress was saved — open the session to resume.`,
+        );
+      }
+      const err = await response.json().catch(() => ({}));
+      const base = formatValidationError(
+        (err as { error?: string }).error,
+        `Failed to generate batch ${batchId}`,
+      );
+      throw new Error(
+        appendValidationDetails(
+          base,
+          (err as { details?: unknown }).details,
+        ),
+      );
+    }
+
+    return response;
+  } catch (error) {
+    if (isFetchTimeoutError(error)) {
+      throw new Error(
+        `Batch timed out (${batchTheme}). Your progress was saved — open the session to resume.`,
+      );
+    }
+    throw error;
+  }
 }
 
 export async function generatePracticeBlueprintOnClient(
@@ -195,22 +236,22 @@ export async function generatePracticeBlueprintOnClient(
 
   let blueprintResponse: Response;
   try {
-    blueprintResponse = await fetch('/api/sessions/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId,
-        type: 'practice',
-        prompt,
-        practiceConfig,
-      }),
-      signal: AbortSignal.timeout(PRACTICE_BLUEPRINT_CLIENT_TIMEOUT_MS),
-    });
+    blueprintResponse = await fetchWithTimeoutAndRetry(
+      '/api/sessions/generate',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          type: 'practice',
+          prompt,
+          practiceConfig,
+        }),
+      },
+      { timeoutMs: PRACTICE_BLUEPRINT_CLIENT_TIMEOUT_MS, retries: 1 },
+    );
   } catch (error) {
-    if (
-      error instanceof DOMException &&
-      (error.name === 'TimeoutError' || error.name === 'AbortError')
-    ) {
+    if (isFetchTimeoutError(error)) {
       throw new Error(
         'Blueprint generation timed out. Please try again.',
       );
@@ -275,39 +316,7 @@ async function generateRemainingBatches(
         ...scale,
       });
 
-      let batchResponse: Response | undefined;
-      let timedOutOnce = false;
-
-      while (!batchResponse) {
-        try {
-          batchResponse = await fetchPracticeBatch(sessionId, batch.id);
-        } catch (error) {
-          if (isFetchTimeoutError(error)) {
-            if (!timedOutOnce) {
-              timedOutOnce = true;
-              continue;
-            }
-            throw new Error(
-              `Batch timed out (${batch.theme}). Your progress was saved — open the session to resume.`,
-            );
-          }
-          throw error;
-        }
-      }
-
-      if (!batchResponse.ok) {
-        const err = await batchResponse.json().catch(() => ({}));
-        const base = formatValidationError(
-          (err as { error?: string }).error,
-          `Failed to generate batch ${batch.id}`,
-        );
-        throw new Error(
-          appendValidationDetails(
-            base,
-            (err as { details?: unknown }).details,
-          ),
-        );
-      }
+      await fetchPracticeBatch(sessionId, batch.id, batch.theme);
 
       completedThemes.push(batch.theme);
       onProgress({
@@ -347,7 +356,7 @@ async function generateRemainingBatches(
     onProgress({ phase: 'ready', ...resolvedScaleFromSession(finalSession) });
     return finalSession;
   } catch (error) {
-    await markPracticeGenerationFailedClient(sessionId);
+    await maybeMarkPracticeFailed(sessionId);
     throw error;
   }
 }
@@ -430,4 +439,22 @@ export async function resumePracticeGenerationIfNeeded(
     onProgress,
     session.config,
   );
+}
+
+export function isResumablePracticeGenerationError(message: string): boolean {
+  return (
+    message.includes('timed out') ||
+    message.includes('open the session to resume')
+  );
+}
+
+export async function fetchPracticeSessionForResume(
+  sessionId: string,
+): Promise<PracticeSessionData | null> {
+  const response = await fetch(`/api/sessions/${sessionId}`).catch(() => null);
+  if (!response?.ok) return null;
+  const { session } = (await response.json()) as {
+    session: PracticeSessionData;
+  };
+  return session.type === 'practice' ? session : null;
 }

@@ -14,7 +14,17 @@ import { sessionRoute } from '@/constants/routes';
 import { THINK_MODE_ENABLED } from '@/constants/features';
 import { usePathGeneration } from '@/hooks/use-path-generation';
 import { usePracticeGeneration } from '@/hooks/use-practice-generation';
-import { deletePracticeSessionClient } from '@/lib/learning/generate-practice-client';
+import {
+  deletePracticeSessionClient,
+  fetchPracticeSessionForResume,
+  isResumablePracticeGenerationError,
+} from '@/lib/learning/generate-practice-client';
+import {
+  fetchLearnSessionForResume,
+  isResumableLearnGenerationError,
+} from '@/lib/learning/generate-path-client';
+import { COMPOSER_ENHANCE_CLIENT_TIMEOUT_MS } from '@/lib/learning/generation/bounds';
+import { fetchWithTimeoutAndRetry } from '@/lib/learning/generation/fetch-with-timeout';
 import { formatValidationError } from '@/lib/kimi/format-validation-error';
 import { useLearnerJourney } from '@/hooks/use-learner-journey';
 import { usePracticeSetup } from '@/hooks/use-practice-setup';
@@ -133,17 +143,21 @@ export function SessionComposer() {
 
     setIsEnhancingPrompt(true);
     try {
-      const response = await fetch('/api/composer/enhance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: activeSection,
-          prompt,
-          ...(activeSection === 'practice'
-            ? { practiceConfig: configForGenerate() }
-            : {}),
-        }),
-      });
+      const response = await fetchWithTimeoutAndRetry(
+        '/api/composer/enhance',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: activeSection,
+            prompt,
+            ...(activeSection === 'practice'
+              ? { practiceConfig: configForGenerate() }
+              : {}),
+          }),
+        },
+        { timeoutMs: COMPOSER_ENHANCE_CLIENT_TIMEOUT_MS, retries: 0 },
+      );
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
@@ -188,6 +202,81 @@ export function SessionComposer() {
     setShowGenerationUi(false);
     setGeneratingSection(null);
     router.push(sessionRoute(session.type, sessionId));
+  };
+
+  const addPartialSessionSummary = (session: Session) => {
+    addSessionSummary({
+      id: session.id,
+      title: session.title,
+      type: session.type,
+      progress: session.progress,
+      currentTopic: session.currentTopic,
+      ...(session.type === 'learn' && session.journeyMeta?.depthLevel
+        ? { journeyDepth: session.journeyMeta.depthLevel }
+        : {}),
+      ...(session.type === 'practice'
+        ? {
+            generationStatus: session.generationStatus,
+            questionCount: session.questions.length,
+          }
+        : {}),
+    });
+  };
+
+  const handleGenerationFailure = async (
+    section: SessionType,
+    sessionId: string,
+    message: string,
+  ) => {
+    const resumableByMessage =
+      section === 'learn'
+        ? isResumableLearnGenerationError(message)
+        : section === 'practice'
+          ? isResumablePracticeGenerationError(message)
+          : false;
+
+    if (section === 'learn' || section === 'practice') {
+      const session =
+        section === 'learn'
+          ? await fetchLearnSessionForResume(sessionId)
+          : await fetchPracticeSessionForResume(sessionId);
+
+      const hasPartialLearn =
+        session?.type === 'learn' &&
+        session.generationStatus === 'generating' &&
+        session.missions.length > 0;
+
+      const hasPartialPractice =
+        session?.type === 'practice' &&
+        Boolean(session.blueprint) &&
+        (session.generationStatus === 'generating' ||
+          session.generationStatus === 'failed' ||
+          (session.generatedBatchIds?.length ?? 0) > 0);
+
+      if (resumableByMessage || hasPartialLearn || hasPartialPractice) {
+        if (session) {
+          addPartialSessionSummary(session);
+        }
+        await loadSessions();
+        setAttachedFiles([]);
+        setShowGenerationUi(false);
+        setGeneratingSection(null);
+        closeComposer();
+        toast.message(message, {
+          description: 'Opening your session so you can resume.',
+        });
+        router.push(sessionRoute(section, sessionId));
+        return;
+      }
+    }
+
+    if (section === 'practice') {
+      await deletePracticeSessionClient(sessionId);
+    }
+    removeSessionSummary(sessionId);
+    await loadSessions();
+    setShowGenerationUi(false);
+    toast.error(message);
   };
 
   const handleCreate = async (sectionFromUi: SessionType) => {
@@ -264,13 +353,7 @@ export function SessionComposer() {
       await finishSession(session, sessionId);
     } catch (error) {
       const message = formatValidationError(error, 'Generation failed');
-      if (section === 'practice') {
-        await deletePracticeSessionClient(sessionId);
-      }
-      removeSessionSummary(sessionId);
-      await loadSessions();
-      setShowGenerationUi(false);
-      toast.error(message);
+      await handleGenerationFailure(section, sessionId, message);
     } finally {
       setIsGenerating(false);
       setGeneratingSection(null);
@@ -281,17 +364,19 @@ export function SessionComposer() {
     <Dialog
       open={composerOpen && composerSection !== null}
       onOpenChange={(open) => {
-        if (!open && !busy) {
-          setAttachedFiles([]);
-          setShowGenerationUi(false);
-          setGeneratingSection(null);
+        if (!open) {
+          if (!busy) {
+            setAttachedFiles([]);
+            setShowGenerationUi(false);
+            setGeneratingSection(null);
+          }
           closeComposer();
         }
       }}
     >
       <DialogContent
         className="max-h-[90vh] w-[min(92vw,48rem)] max-w-none gap-0 overflow-y-auto p-0 sm:max-w-3xl sm:rounded-xl"
-        showCloseButton={!busy}
+        showCloseButton
       >
         {showGenerationUi && (progress || practiceProgress) ? (
           (generatingSection ?? activeSection) === 'practice' &&

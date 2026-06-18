@@ -5,7 +5,7 @@ import { sessionToContent } from '@/lib/learning/mappers';
 import { getSessionById, getSessionLearnerInfo, updateSession } from '@/lib/learning/sessions';
 import type { LearnSession } from '@/types/session';
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 interface RouteContext {
   params: Promise<{ sessionId: string; missionId: string }>;

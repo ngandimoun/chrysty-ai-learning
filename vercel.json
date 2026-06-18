@@ -1,10 +1,19 @@
 {
   "functions": {
     "src/app/api/sessions/generate/route.ts": {
-      "maxDuration": 120
+      "maxDuration": 300
+    },
+    "src/app/api/sessions/[sessionId]/missions/[missionId]/generate/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/sessions/[sessionId]/practice-batches/[batchId]/generate/route.ts": {
+      "maxDuration": 300
     },
     "src/app/api/sessions/[sessionId]/stream/route.ts": {
       "maxDuration": 300
+    },
+    "src/app/api/composer/enhance/route.ts": {
+      "maxDuration": 60
     }
   },
   "build": {

@@ -14,7 +14,7 @@ import { streamTutorViaKimi } from '@/lib/kimi/stream-tutor';
 import type { PracticeSessionData } from '@/types/session';
 
 export const runtime = 'nodejs';
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 interface RouteContext {
   params: Promise<{ sessionId: string }>;

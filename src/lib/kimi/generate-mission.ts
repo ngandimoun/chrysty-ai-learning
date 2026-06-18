@@ -15,7 +15,8 @@ import { withKimiRetry } from './retry';
 import type { LearnSession } from '@/types/session';
 import type { LearningMission } from '@/types/learning-path';
 
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 1;
+const MISSION_MAX_TOKENS = 6144;
 
 export interface GenerateMissionParams {
   session: LearnSession;
@@ -40,15 +41,17 @@ async function runMissionJsonCompletion(
     thinking: 'disabled',
     stream: false,
     jsonMode: true,
-    maxTokens: 8192,
+    maxTokens: MISSION_MAX_TOKENS,
   });
 
-  const completion = await withKimiRetry(() =>
-    client.chat.completions.create({
-      model,
-      messages,
-      ...body,
-    } as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming),
+  const completion = await withKimiRetry(
+    () =>
+      client.chat.completions.create({
+        model,
+        messages,
+        ...body,
+      } as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming),
+    { maxAttempts: 2 },
   );
 
   return extractCompletionJsonText(completion.choices[0]).text;
@@ -102,7 +105,7 @@ export async function generateMissionViaKimi(
                 formulaUris,
                 messages,
                 jsonMode: true,
-                maxTokens: 8192,
+                maxTokens: MISSION_MAX_TOKENS,
                 thinking: 'disabled',
                 maxRounds: 2,
               })
