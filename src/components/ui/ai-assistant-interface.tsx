@@ -36,6 +36,7 @@ import {
 import type { SessionType } from '@/types/session';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { ScrollHintPanel } from '@/components/ui/scroll-hint-panel';
 
 const SECTIONS: {
   type: SessionType;
@@ -299,48 +300,41 @@ export function SessionComposerInterface({
             className="w-full overflow-hidden"
           >
             {activeSection === 'learn' && journeyTopics.length > 0 ? (
-              <div className="mb-4 overflow-hidden rounded-xl border border-primary/20 bg-primary/[0.03] shadow-sm">
-                <div className="border-b border-primary/10 p-4">
-                  <h3 className="text-base font-medium text-foreground">
-                    Continue your journey
-                  </h3>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    Chrysty remembers what you have already explored
-                  </p>
-                </div>
-                <ul className="max-h-48 divide-y divide-border overflow-y-auto overscroll-contain">
-                  {journeyTopics.map((topic, index) => (
-                    <motion.li
-                      key={topic.subject}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.03 }}
+              <ScrollHintPanel
+                title="Continue your journey"
+                subtitle="Chrysty remembers what you have already explored"
+              >
+                {journeyTopics.map((topic, index) => (
+                  <motion.li
+                    key={topic.subject}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.03 }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onSelectJourneyTopic?.(
+                          `Continue my ${topic.subjectLabel.toLowerCase()} learning — go deeper`,
+                        )
+                      }
+                      className="flex w-full cursor-pointer flex-col gap-0.5 p-4 text-left transition-colors hover:bg-muted/60"
                     >
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onSelectJourneyTopic?.(
-                            `Continue my ${topic.subjectLabel.toLowerCase()} learning — go deeper`,
-                          )
-                        }
-                        className="flex w-full cursor-pointer flex-col gap-0.5 p-4 text-left transition-colors hover:bg-muted/60"
-                      >
-                        <span className="text-base text-foreground">
-                          Continue your {topic.subjectLabel} journey
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          Depth {topic.depthLevel + 1} ·{' '}
-                          {topic.completedMissionCount}{' '}
-                          {topic.completedMissionCount === 1
-                            ? 'mission'
-                            : 'missions'}{' '}
-                          learned
-                        </span>
-                      </button>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
+                      <span className="text-base text-foreground">
+                        Continue your {topic.subjectLabel} journey
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        Depth {topic.depthLevel + 1} ·{' '}
+                        {topic.completedMissionCount}{' '}
+                        {topic.completedMissionCount === 1
+                          ? 'mission'
+                          : 'missions'}{' '}
+                        learned
+                      </span>
+                    </button>
+                  </motion.li>
+                ))}
+              </ScrollHintPanel>
             ) : null}
 
             {activeSection === 'practice' &&
@@ -356,51 +350,44 @@ export function SessionComposerInterface({
             ) : null}
 
             {activeSection === 'practice' && journeyTopics.length > 0 ? (
-              <div className="mb-4 overflow-hidden rounded-xl border border-primary/20 bg-primary/[0.03] shadow-sm">
-                <div className="border-b border-primary/10 p-4">
-                  <h3 className="text-base font-medium text-foreground">
-                    Practice what you&apos;ve learned
-                  </h3>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    Sessions use your learn history and weak areas
-                  </p>
-                </div>
-                <ul className="max-h-48 divide-y divide-border overflow-y-auto overscroll-contain">
-                  {journeyTopics.map((topic, index) => {
-                    const sourceId = topic.priorPaths[0]?.sessionId;
-                    return (
-                      <motion.li
-                        key={topic.subject}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.03 }}
+              <ScrollHintPanel
+                title="Practice what you've learned"
+                subtitle="Sessions use your learn history and weak areas"
+              >
+                {journeyTopics.map((topic, index) => {
+                  const sourceId = topic.priorPaths[0]?.sessionId;
+                  return (
+                    <motion.li
+                      key={topic.subject}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: index * 0.03 }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSelectPracticeTopic?.(
+                            practicePromptForTopic(topic),
+                            sourceId,
+                          )
+                        }
+                        className="flex w-full cursor-pointer flex-col gap-0.5 p-4 text-left transition-colors hover:bg-muted/60"
                       >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onSelectPracticeTopic?.(
-                              practicePromptForTopic(topic),
-                              sourceId,
-                            )
-                          }
-                          className="flex w-full cursor-pointer flex-col gap-0.5 p-4 text-left transition-colors hover:bg-muted/60"
-                        >
-                          <span className="text-base text-foreground">
-                            Practice {topic.subjectLabel}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {topic.completedMissionCount}{' '}
-                            {topic.completedMissionCount === 1
-                              ? 'mission'
-                              : 'missions'}{' '}
-                            learned · depth {topic.depthLevel + 1}
-                          </span>
-                        </button>
-                      </motion.li>
-                    );
-                  })}
-                </ul>
-              </div>
+                        <span className="text-base text-foreground">
+                          Practice {topic.subjectLabel}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {topic.completedMissionCount}{' '}
+                          {topic.completedMissionCount === 1
+                            ? 'mission'
+                            : 'missions'}{' '}
+                          learned · depth {topic.depthLevel + 1}
+                        </span>
+                      </button>
+                    </motion.li>
+                  );
+                })}
+              </ScrollHintPanel>
             ) : null}
 
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
