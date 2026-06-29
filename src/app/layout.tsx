@@ -23,6 +23,9 @@ export const metadata: Metadata = {
     template: `%s | ${APP_NAME}`,
   },
   description: APP_DESCRIPTION,
+  other: {
+    google: 'notranslate',
+  },
 };
 
 export default function RootLayout({
@@ -31,9 +34,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="h-full">
+    <html lang="en" translate="no" suppressHydrationWarning className="notranslate h-full">
       <body
-        className={`${plusJakarta.variable} ${geistMono.variable} h-full font-sans antialiased`}
+        className={`notranslate ${plusJakarta.variable} ${geistMono.variable} h-full font-sans antialiased`}
+        translate="no"
       >
         <ThemeProvider
           attribute="class"
