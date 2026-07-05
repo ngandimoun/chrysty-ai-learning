@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 
-const DEFAULT_TRANSCRIBE_MODEL = 'gemini-3.1-flash';
+const DEFAULT_TRANSCRIBE_MODEL = 'gemini-3.5-flash';
 
 export function createGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
