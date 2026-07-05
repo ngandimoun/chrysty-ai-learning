@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { prepareTranscriptionAudio } from '@/lib/audio/prepare-transcription-audio';
 
 const MAX_RECORDING_MS = 120_000;
 
@@ -69,8 +70,9 @@ export function useVoiceTranscription({
     async (blob: Blob) => {
       setIsTranscribing(true);
       try {
+        const prepared = await prepareTranscriptionAudio(blob);
         const formData = new FormData();
-        formData.append('audio', blob, 'recording.webm');
+        formData.append('audio', prepared.blob, prepared.filename);
 
         const response = await fetch('/api/composer/transcribe', {
           method: 'POST',

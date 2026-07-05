@@ -9,7 +9,8 @@ export const TRANSCRIBE_ALLOWED_MIME_TYPES = new Set([
   'audio/aac',
   'audio/ogg',
   'audio/flac',
-  'audio/webm',
+  'audio/opus',
+  'audio/m4a',
   'audio/mp4',
   'audio/x-m4a',
 ]);
@@ -17,7 +18,7 @@ export const TRANSCRIBE_ALLOWED_MIME_TYPES = new Set([
 export function normalizeAudioMimeType(mimeType: string): string {
   const base = mimeType.split(';')[0]?.trim().toLowerCase() ?? '';
   if (base === 'audio/x-wav') return 'audio/wav';
-  if (base === 'audio/x-m4a') return 'audio/mp4';
+  if (base === 'audio/x-m4a' || base === 'audio/mp4') return 'audio/m4a';
   return base;
 }
 
