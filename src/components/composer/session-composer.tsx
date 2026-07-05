@@ -28,6 +28,7 @@ import { fetchWithTimeoutAndRetry } from '@/lib/learning/generation/fetch-with-t
 import { formatValidationError } from '@/lib/kimi/format-validation-error';
 import { useLearnerJourney } from '@/hooks/use-learner-journey';
 import { usePracticeSetup } from '@/hooks/use-practice-setup';
+import { useVoiceTranscription } from '@/hooks/use-voice-transcription';
 import { useSessionStore } from '@/store/session-store';
 import {
   getEffectiveQuestionTarget,
@@ -99,6 +100,17 @@ export function SessionComposer() {
     useState<SessionType | null>(null);
 
   const busy = isGenerating || isPathGenerating || isPracticeGenerating;
+
+  const { toggleVoiceInput, isRecording, isTranscribing } =
+    useVoiceTranscription({
+      disabled: busy,
+      onTranscript: (text) => {
+        const prev = composerDraft.trim();
+        setComposerDraft(prev ? `${prev} ${text}` : text);
+        toast.success('Transcription added');
+      },
+      onError: (message) => toast.error(message),
+    });
 
   const handleAttachFile = async (file: File) => {
     setIsUploadingFile(true);
@@ -394,6 +406,9 @@ export function SessionComposer() {
             onCreate={handleCreate}
             onImprovePrompt={handleEnhancePrompt}
             isEnhancingPrompt={isEnhancingPrompt}
+            onVoiceInputClick={toggleVoiceInput}
+            isRecording={isRecording}
+            isTranscribing={isTranscribing}
             isCreating={busy}
             attachedFiles={attachedFiles}
             onAttachFile={handleAttachFile}

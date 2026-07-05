@@ -7,6 +7,7 @@ import {
   BookOpen,
   Brain,
   Dumbbell,
+  Mic,
   Paperclip,
   Sparkles,
   Loader2,
@@ -73,6 +74,9 @@ export interface SessionComposerInterfaceProps {
   onCreate: (section: SessionType) => void | Promise<void>;
   onImprovePrompt?: () => void | Promise<void>;
   isEnhancingPrompt?: boolean;
+  onVoiceInputClick?: () => void | Promise<void>;
+  isRecording?: boolean;
+  isTranscribing?: boolean;
   isCreating?: boolean;
   attachedFiles?: AttachedFile[];
   onAttachFile?: (file: File) => void | Promise<void>;
@@ -96,6 +100,9 @@ export function SessionComposerInterface({
   onCreate,
   onImprovePrompt,
   isEnhancingPrompt = false,
+  onVoiceInputClick,
+  isRecording = false,
+  isTranscribing = false,
   isCreating = false,
   attachedFiles = [],
   onAttachFile,
@@ -230,6 +237,53 @@ export function SessionComposerInterface({
                     </TooltipContent>
                   </Tooltip>
                 </>
+              ) : null}
+              {onVoiceInputClick ? (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => void onVoiceInputClick()}
+                        disabled={
+                          isCreating ||
+                          isTranscribing ||
+                          isEnhancingPrompt ||
+                          isUploadingFile
+                        }
+                        aria-label={
+                          isRecording
+                            ? 'Stop recording'
+                            : isTranscribing
+                              ? 'Transcribing speech'
+                              : 'Voice input'
+                        }
+                        aria-pressed={isRecording}
+                        className={cn(
+                          'text-muted-foreground hover:text-foreground',
+                          isRecording && 'text-destructive hover:text-destructive',
+                        )}
+                      />
+                    }
+                  >
+                    {isTranscribing ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Mic
+                        className={cn('size-4', isRecording && 'animate-pulse')}
+                      />
+                    )}
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {isTranscribing
+                      ? 'Transcribing…'
+                      : isRecording
+                        ? 'Stop recording'
+                        : 'Voice input'}
+                  </TooltipContent>
+                </Tooltip>
               ) : null}
               {onImprovePrompt ? (
               <Tooltip>
