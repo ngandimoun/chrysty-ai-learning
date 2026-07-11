@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, X } from 'lucide-react';
 
 import { useChrystyLiveEmbed } from './provider.js';
 
@@ -13,20 +13,38 @@ export function AskChrystyButton({
   className = '',
   label = 'Ask Chrysty',
 }: AskChrystyButtonProps) {
-  const { openLive, isOpen, isConnecting, hasHostContext } = useChrystyLiveEmbed();
+  const { openLive, closeLive, isOpen, isConnecting, hasHostContext } =
+    useChrystyLiveEmbed();
 
   if (!hasHostContext) return null;
+
+  const ariaLabel = isOpen ? 'Close Ask Chrysty' : label;
 
   return (
     <button
       type="button"
-      aria-label={label}
-      disabled={isOpen || isConnecting}
-      onClick={() => void openLive()}
-      className={`fixed bottom-6 right-6 z-[9990] flex size-14 items-center justify-center rounded-full border border-border bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:opacity-60 ${className}`}
+      aria-label={ariaLabel}
+      aria-pressed={isOpen}
+      disabled={isConnecting && !isOpen}
+      onClick={() => {
+        if (isOpen) {
+          closeLive();
+          return;
+        }
+        void openLive();
+      }}
+      className={`fixed bottom-6 right-6 z-[9990] flex size-14 items-center justify-center rounded-full border border-border shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:opacity-60 ${
+        isOpen
+          ? 'bg-muted text-foreground ring-2 ring-primary/60'
+          : 'bg-primary text-primary-foreground'
+      } ${className}`}
     >
-      <MessageCircle className="size-6" aria-hidden />
-      <span className="sr-only">{label}</span>
+      {isOpen ? (
+        <X className="size-6" aria-hidden />
+      ) : (
+        <MessageCircle className="size-6" aria-hidden />
+      )}
+      <span className="sr-only">{ariaLabel}</span>
     </button>
   );
 }

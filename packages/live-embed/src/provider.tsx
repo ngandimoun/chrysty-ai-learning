@@ -239,11 +239,11 @@ export function ChrystyLiveEmbedProvider({ children, ...config }: ChrystyLiveEmb
       ) : null}
       {isOpen && embedUrl ? (
         <div
-          className="fixed inset-0 z-[9999] flex flex-col bg-background/80 backdrop-blur-sm"
+          className="fixed bottom-24 right-6 z-[9999] flex w-[min(24rem,calc(100vw-2rem))] h-[min(32rem,calc(100vh-8rem))] flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl"
           role="dialog"
           aria-label="Ask Chrysty Live"
         >
-          <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
             <p className="truncate text-sm font-medium text-foreground">
               {statusLine ?? 'Chrysty Live'}
             </p>
