@@ -1,8 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { AskChrystyButton, ChrystyHostContext } from '@chrysty/live-embed';
 import { GraduationCap, Menu, PanelLeft, PanelRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 import { SessionSidebar } from '@/components/sidebar/session-sidebar';
 import { SessionBootstrap } from '@/components/layout/session-bootstrap';
 import { SessionComposer } from '@/components/composer/session-composer';
@@ -26,8 +28,16 @@ interface WorkspaceShellProps {
   children: ReactNode;
 }
 
+function workspaceTitle(pathname: string): string {
+  if (pathname.startsWith('/practice')) return `${APP_NAME} · Practice`;
+  if (pathname.startsWith('/think')) return `${APP_NAME} · Think`;
+  if (pathname.startsWith('/learn')) return `${APP_NAME} · Learn`;
+  return APP_NAME;
+}
+
 export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const mounted = useMounted();
+  const pathname = usePathname();
   useKeyboardShortcuts();
 
   const leftPanelOpen = useUIStore((s) => s.leftPanelOpen);
@@ -88,14 +98,24 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           <ThemeToggle />
         </div>
       </header>
-      <main className="workspace-bg flex-1 overflow-y-auto p-4 md:p-6">
+      <main
+        id="workspace-content"
+        data-chrysty-capture
+        className="workspace-bg flex-1 overflow-y-auto p-4 md:p-6"
+      >
         {children}
       </main>
     </div>
   );
 
   return (
-    <>
+    <ChrystyHostContext
+      source="learning_workspace"
+      title={workspaceTitle(pathname)}
+      captureTarget="#workspace-content"
+      worker="tutor"
+      entityId={pathname}
+    >
       <div className="flex h-screen overflow-hidden bg-background">
         <aside
           className={cn(
@@ -158,6 +178,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
 
       <SessionBootstrap />
       <SessionComposer />
-    </>
+      <AskChrystyButton />
+    </ChrystyHostContext>
   );
 }

@@ -3,7 +3,6 @@
 import { MessageCircle } from 'lucide-react';
 
 import { useChrystyLiveEmbed } from './provider.js';
-import { useChrystyHostContext } from './host-context.js';
 
 interface AskChrystyButtonProps {
   className?: string;
@@ -14,10 +13,9 @@ export function AskChrystyButton({
   className = '',
   label = 'Ask Chrysty',
 }: AskChrystyButtonProps) {
-  const hostCtx = useChrystyHostContext();
-  const { openLive, isOpen, isConnecting } = useChrystyLiveEmbed();
+  const { openLive, isOpen, isConnecting, hasHostContext } = useChrystyLiveEmbed();
 
-  if (!hostCtx) return null;
+  if (!hasHostContext) return null;
 
   return (
     <button

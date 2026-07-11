@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AskChrystyButton, ChrystyHostContext } from '@chrysty/live-embed';
+import { ChrystyHostContext } from '@chrysty/live-embed';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -187,7 +187,6 @@ export function MissionReader({
           )}
         </div>
       </motion.div>
-      <AskChrystyButton />
     </ChrystyHostContext>
   );
 }
