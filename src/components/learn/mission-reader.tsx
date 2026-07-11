@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { AskChrystyButton, ChrystyHostContext } from '@chrysty/live-embed';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -96,86 +97,97 @@ export function MissionReader({
   };
 
   return (
-    <motion.div
-      className="reading-column mx-auto space-y-6"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+    <ChrystyHostContext
+      source="learning_mission"
+      entityId={session.id}
+      title={`${session.title} · Mission ${mission.index}`}
+      captureTarget="#mission-content"
+      worker="tutor"
     >
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleBackToList}
-          className="gap-1.5"
-        >
-          <ArrowLeft className="size-3.5" />
-          Missions
-        </Button>
-      </div>
-
-      <div className="space-y-3">
-        <div>
-          <p className="text-xs font-medium text-muted-foreground">
-            Mission {mission.index}
-          </p>
-          <h1 className="text-h2 text-foreground">{mission.title}</h1>
-        </div>
-        <Progress value={progressPct} className="h-1" />
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${missionId}-${cardIndex}`}
-          initial={{ opacity: 0, x: 16 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -16 }}
-          transition={{ duration: 0.2 }}
-        >
-          {isOpening ? (
-            <MissionOpeningBlock opening={mission.opening} />
-          ) : card ? (
-            <MissionCardBlock card={card} />
-          ) : null}
-        </motion.div>
-      </AnimatePresence>
-
-      <div className="flex justify-between gap-3 pt-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={cardIndex === 0}
-          onClick={handleBack}
-        >
-          Back
-        </Button>
-
-        {isLastCard ? (
+      <motion.div
+        className="reading-column mx-auto space-y-6"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+      >
+        <div className="flex items-center gap-2">
           <Button
+            variant="ghost"
             size="sm"
+            onClick={handleBackToList}
             className="gap-1.5"
-            disabled={completing}
-            onClick={() => void handleComplete()}
           >
-            Complete mission
-            <Check className="size-3.5" />
+            <ArrowLeft className="size-3.5" />
+            Missions
           </Button>
-        ) : (
-          <Button size="sm" className="gap-1.5" onClick={handleContinue}>
-            Continue
-            <ArrowRight className="size-3.5" />
-          </Button>
-        )}
-      </div>
-
-      {isLastCard ? (
-        <div className="reading-surface rounded-xl border border-mode-learn/20 p-4 text-center">
-          <p className="text-reading-muted mb-1 text-xs font-medium uppercase tracking-wide">
-            Key takeaway
-          </p>
-          <p className="text-reading font-medium">{mission.keyTakeaway}</p>
         </div>
-      ) : null}
-    </motion.div>
+
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">
+              Mission {mission.index}
+            </p>
+            <h1 className="text-h2 text-foreground">{mission.title}</h1>
+          </div>
+          <Progress value={progressPct} className="h-1" />
+        </div>
+
+        <div id="mission-content" data-chrysty-capture className="space-y-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${missionId}-${cardIndex}`}
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.2 }}
+            >
+              {isOpening ? (
+                <MissionOpeningBlock opening={mission.opening} />
+              ) : card ? (
+                <MissionCardBlock card={card} />
+              ) : null}
+            </motion.div>
+          </AnimatePresence>
+
+          {isLastCard ? (
+            <div className="reading-surface rounded-xl border border-mode-learn/20 p-4 text-center">
+              <p className="text-reading-muted mb-1 text-xs font-medium uppercase tracking-wide">
+                Key takeaway
+              </p>
+              <p className="text-reading font-medium">{mission.keyTakeaway}</p>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex justify-between gap-3 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={cardIndex === 0}
+            onClick={handleBack}
+          >
+            Back
+          </Button>
+
+          {isLastCard ? (
+            <Button
+              size="sm"
+              className="gap-1.5"
+              disabled={completing}
+              onClick={() => void handleComplete()}
+            >
+              Complete mission
+              <Check className="size-3.5" />
+            </Button>
+          ) : (
+            <Button size="sm" className="gap-1.5" onClick={handleContinue}>
+              Continue
+              <ArrowRight className="size-3.5" />
+            </Button>
+          )}
+        </div>
+      </motion.div>
+      <AskChrystyButton />
+    </ChrystyHostContext>
   );
 }

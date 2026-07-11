@@ -43,3 +43,4 @@ next-env.d.ts
 
 # platform build output (rebuilt via postinstall)
 packages/platform/dist
+packages/live-embed/dist

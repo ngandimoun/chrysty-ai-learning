@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ChrystyLiveEmbedProvider } from '@chrysty/live-embed';
 import { Geist_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 import { ThemeProvider } from '@/components/layout/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
@@ -45,10 +46,17 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TooltipProvider>
-            {children}
-            <Toaster richColors position="top-right" />
-          </TooltipProvider>
+          <ChrystyLiveEmbedProvider
+            worker="tutor"
+            astraEmbedUrl={
+              process.env.NEXT_PUBLIC_ASTRA_EMBED_URL ?? 'https://chrysty.chrysty.dev'
+            }
+          >
+            <TooltipProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </TooltipProvider>
+          </ChrystyLiveEmbedProvider>
         </ThemeProvider>
       </body>
     </html>
